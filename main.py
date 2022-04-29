@@ -39,6 +39,8 @@ schema_facebook_stat = [
         bigquery.SchemaField('action_type', 'STRING'), bigquery.SchemaField('value', 'STRING'))),
     bigquery.SchemaField("cost_per_15_sec_video_view", 'RECORD', mode='REPEATED', fields=(
         bigquery.SchemaField('action_type', 'STRING'), bigquery.SchemaField('value', 'STRING'))),
+    bigquery.SchemaField("cost_per_conversion", 'RECORD', mode='REPEATED', fields=(
+        bigquery.SchemaField('action_type', 'STRING'), bigquery.SchemaField('value', 'STRING'))),
     bigquery.SchemaField("cost_per_estimated_ad_recallers",
                          "FLOAT", mode="NULLABLE"),
     bigquery.SchemaField("cost_per_inline_link_click",
@@ -55,12 +57,12 @@ schema_facebook_stat = [
     bigquery.SchemaField("cost_per_unique_outbound_click", 'RECORD', mode='REPEATED', fields=(
         bigquery.SchemaField('action_type', 'STRING'), bigquery.SchemaField('value', 'STRING'))),
     bigquery.SchemaField("cpc", "FLOAT", mode="NULLABLE"),
-    bigquery.SchemaField("cpm", "FLOAT", mode="REQUIRED"),
-    bigquery.SchemaField("cpp", "FLOAT", mode="REQUIRED"),
-    bigquery.SchemaField("ctr", "FLOAT", mode="REQUIRED"),
+    bigquery.SchemaField("cpm", "FLOAT", mode="NULLABLE"),
+    bigquery.SchemaField("cpp", "FLOAT", mode="NULLABLE"),
+    bigquery.SchemaField("ctr", "FLOAT", mode="NULLABLE"),
     bigquery.SchemaField("date_start", "DATE", mode="REQUIRED"),
     bigquery.SchemaField("date_stop", "DATE", mode="REQUIRED"),
-    bigquery.SchemaField("estimated_ad_recallers", "INTEGER", mode="REQUIRED"),
+    bigquery.SchemaField("estimated_ad_recallers", "INTEGER", mode="NULLABLE"),
     bigquery.SchemaField("frequency", "FLOAT", mode="REQUIRED"),
     bigquery.SchemaField("impressions", "INTEGER", mode="REQUIRED"),
     bigquery.SchemaField("mobile_app_purchase_roas", 'RECORD', mode='REPEATED', fields=(
@@ -76,7 +78,7 @@ schema_facebook_stat = [
     bigquery.SchemaField("reach", "INTEGER", mode="REQUIRED"),
     bigquery.SchemaField("spend", "FLOAT", mode="REQUIRED"),
     bigquery.SchemaField("unique_clicks", "INTEGER", mode="REQUIRED"),
-    bigquery.SchemaField("unique_ctr", "FLOAT", mode="REQUIRED"),
+    bigquery.SchemaField("unique_ctr", "FLOAT", mode="NULLABLE"),
     bigquery.SchemaField("unique_video_view_15_sec", 'RECORD', mode='REPEATED', fields=(
         bigquery.SchemaField('action_type', 'STRING'), bigquery.SchemaField('value', 'STRING'))),
     bigquery.SchemaField("video_15_sec_watched_actions", 'RECORD', mode='REPEATED', fields=(
@@ -147,7 +149,7 @@ def exist_dataset_table(client, table_id, dataset_id, project_id, schema, cluste
 
 def insert_rows_bq(client, table_id, dataset_id, project_id, data):
 
-    print(data)
+    # print(data)
 
     table_ref = "{}.{}.{}".format(project_id, dataset_id, table_id)
     table = client.get_table(table_ref)
@@ -324,6 +326,7 @@ def get_facebook_data(event, context):
                 'actions',
                 'conversions',
                 'cost_per_15_sec_video_view',
+                'cost_per_conversion',
                 'cost_per_outbound_click',
                 'cost_per_thruplay',
                 'cost_per_unique_action_type',
@@ -352,40 +355,6 @@ def get_facebook_data(event, context):
                 else:
                     df[item] = df.apply(lambda _: [], axis=1)
 
-            # df = df.fillna({'actions': [],
-            #                 'conversions': [],
-            #                 'cost_per_15_sec_video_view': [],
-            #                 'cost_per_outbound_click': [],
-            #                 'cost_per_thruplay': [],
-            #                 'cost_per_unique_action_type': [],
-            #                 'cost_per_unique_outbound_click': [],
-            #                 'mobile_app_purchase_roas': [],
-            #                 'outbound_clicks_ctr': [],
-            #                 'outbound_clicks': [],
-            #                 'purchase_roas': [],
-            #                 'unique_video_view_15_sec': [],
-            #                 'video_15_sec_watched_actions': [],
-            #                 'video_30_sec_watched_actions': [],
-            #                 'video_avg_time_watched_actions': [],
-            #                 'video_p100_watched_actions': [],
-            #                 'video_p25_watched_actions': [],
-            #                 'video_p50_watched_actions': [],
-            #                 'video_p75_watched_actions': [],
-            #                 'video_p95_watched_actions': [],
-            #                 'video_play_actions': [],
-            #                 'website_ctr': [],
-            #                 'website_purchase_roas': []
-            #                 })
-
-            # df = df.convert_dtypes()
-
-            # def loadArray(a: str):
-            #     print(a)
-            #     print(type(a))
-            #     return json.loads(a.replace("'", '"'))
-
-            print(df)
-
             df.to_csv('fb_data.csv', index=None)
 
         except Exception as e:
@@ -393,46 +362,11 @@ def get_facebook_data(event, context):
             print(e)
             raise
 
-        # fb_source = []
-
-        # for item in insights:
-
-        #     actions = []
-        #     conversions = []
-
-        #     if 'actions' in item:
-        #         for i, value in enumerate(item['actions']):
-        #             actions.append(
-        #                 {'action_type': value['action_type'], 'value': value['value']})
-
-        #     if 'conversions' in item:
-        #         for i, value in enumerate(item['conversions']):
-        #             conversions.append(
-        #                 {'action_type': value['action_type'], 'value': value['value']})
-
-        #     fb_source.append({'date': item['date_start'],
-        #                       'ad_id': item['ad_id'],
-        #                       'ad_name': item['ad_name'],
-        #                       'adset_id': item['adset_id'],
-        #                       'adset_name': item['adset_name'],
-        #                       'campaign_id': item['campaign_id'],
-        #                       'campaign_name': item['campaign_name'],
-        #                       'clicks': item['clicks'],
-        #                       'impressions': item['impressions'],
-        #                       'spend': item['spend'],
-        #                       'conversions': conversions,
-        #                       'actions': actions
-        #                       })
-        # print(fb_source)
-        # dff = pandas.DataFrame(fb_source)
-        # print(dff.head(5))
-        # dff.to_csv('dff.csv')
-
         if exist_dataset_table(bigquery_client, table_id, dataset_id, project_id, schema_facebook_stat, clustering_fields_facebook) == 'ok':
 
             print('Inserting data to bigquery...')
             insert_rows_bq(bigquery_client, table_id,
-                           dataset_id, project_id, df.to_dict('records'))
+                           dataset_id, project_id, json.loads(df.to_json(orient='records')))
             print('Done inserting...')
 
             return 'ok'
@@ -447,10 +381,42 @@ evnt = {
         'app_secret': '41ab12354adccbade22f9bd9abf2491b',
         'access_token': 'EAANnwJEZCed8BAEZBjXpIxMtTeDfwp40nuMgly1ZAsxw0hMudAnhH9Bup7mDdoUas2Sg6CZB3klJpRuGmjW89ZApkki8ZAs2UOOOflBiFhcpmySZANsfxvO4djqucV2hzFl8LXXZBXqYabPCEzXRi4ndaZBAHqhihp6a4mAKIYkhtozX0eHfPoJrm',
         'account_id': '234370047369717',
-        'date_since': '2019-04-01',
-        'date_until': '2019-04-02'
+        'date_since': '2019-07-26',
+        'date_until': '2019-07-31'
     },
     'data': base64.b64encode('get_facebook'.encode('utf-8'))
 }
 
-get_facebook_data(evnt, '')
+# get_facebook_data(evnt, '')
+
+
+def getIntervalFacebookData(start: str, limit: int, interval: int):
+    i = 0
+
+    start = datetime.strptime(start, '%Y-%m-%d')
+
+    while i < limit:
+        i = i + 1
+        end = start + timedelta(days=interval)
+        print(f'{i}. Intervall: {datetime.strftime(start, "%Y-%m-%d")} - {datetime.strftime(end, "%Y-%m-%d")}\n')
+
+        evnt = {
+            'attributes': {
+                'table_id': 'raw_data',
+                'dataset_id': 'facebook_marketing_api',
+                'project_id': 'bitburger-marketing',
+                'app_id': '625092038584719',
+                'app_secret': '41ab12354adccbade22f9bd9abf2491b',
+                'access_token': 'EAANnwJEZCed8BAEZBjXpIxMtTeDfwp40nuMgly1ZAsxw0hMudAnhH9Bup7mDdoUas2Sg6CZB3klJpRuGmjW89ZApkki8ZAs2UOOOflBiFhcpmySZANsfxvO4djqucV2hzFl8LXXZBXqYabPCEzXRi4ndaZBAHqhihp6a4mAKIYkhtozX0eHfPoJrm',
+                'account_id': '920141091877247',
+                'date_since': datetime.strftime(start, '%Y-%m-%d'),
+                'date_until': datetime.strftime(end, '%Y-%m-%d')
+            },
+            'data': base64.b64encode('get_facebook'.encode('utf-8'))
+        }
+
+        get_facebook_data(evnt, '')
+
+        start = end + timedelta(days=1)
+
+getIntervalFacebookData('2021-08-01', 10, 20)
