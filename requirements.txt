@@ -1,4 +1,6 @@
-datetime
+requests==2.25.1
+facebook_business==12.0.1
+pandas==1.2.3
+protobuf==3.20.1
 google-cloud-logging
 google-cloud-bigquery
-facebook_business
