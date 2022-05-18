@@ -4,7 +4,6 @@ from google.cloud import bigquery
 from google.cloud.exceptions import NotFound, BadRequest
 from datetime import datetime, date, timedelta
 import pandas
-import requests
 import logging
 import base64
 from facebook_business.api import FacebookAdsApi
@@ -556,6 +555,51 @@ def get_facebook_data(event, context):
                 'time_range': {
                     'since':  first_day_of_year.strftime("%Y-%m-%d"),
                     'until': today.strftime("%Y-%m-%d")
+                }, 'time_increment': 'all_days'
+            })
+
+            result_cursor = wait_for_async_job(job)
+            insights = [item for item in result_cursor]
+
+            df = pandas.DataFrame(insights)
+
+            for item in array_fields:
+                if item in df.columns:
+                    df[item] = df[item].fillna('').apply(list)
+                else:
+                    df[item] = df.apply(lambda _: [], axis=1)
+
+        except Exception as e:
+            logger.info(e)
+            print(e)
+            raise
+
+        if exist_dataset_table(bigquery_client, table_id, dataset_id, project_id, schema_facebook_stat_campaign, clustering_fields_facebook) == 'ok':
+
+            print('Inserting data to bigquery...')
+            insert_rows_bq(bigquery_client, table_id,
+                           dataset_id, project_id, json.loads(df.to_json(orient='records')))
+            print('Done inserting...')
+
+            return 'ok'
+    
+    elif pubsub_message == 'get_facebook_lytd':
+
+        first_day_last_year = f"{date.today().year - 1}-01-01"
+        lytd = date.today().replace(year=date.today().year - 1)
+
+        print(f'Start: {first_day_last_year}\nEnd: {lytd}')
+
+        try:
+            FacebookAdsApi.init(app_id, app_secret,
+                                access_token, api_version='v13.0')
+
+            account = AdAccount('act_'+str(account_id))
+            job = account.get_insights_async(fields=fields_campaign, params={
+                'level': 'campaign',
+                'time_range': {
+                    'since':  first_day_last_year,
+                    'until': lytd.strftime("%Y-%m-%d")
                 }, 'time_increment': 'all_days'
             })
 
