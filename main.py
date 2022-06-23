@@ -541,7 +541,7 @@ def get_facebook_data(event, context):
     elif pubsub_message == 'get_facebook_ytd':
 
         first_day_of_year = date.today().replace(month=1, day=1)
-        today = date.today()
+        today = date.today() - timedelta(days=1)
 
         print(f'Start: {first_day_of_year}\nEnd: {today}')
 
@@ -586,7 +586,7 @@ def get_facebook_data(event, context):
     elif pubsub_message == 'get_facebook_lytd':
 
         first_day_last_year = f"{date.today().year - 1}-01-01"
-        lytd = date.today().replace(year=date.today().year - 1)
+        lytd = date.today().replace(year=date.today().year - 1) - timedelta(days=1)
 
         print(f'Start: {first_day_last_year}\nEnd: {lytd}')
 
